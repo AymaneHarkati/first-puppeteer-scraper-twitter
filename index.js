@@ -162,7 +162,7 @@ const extractTweets = async () => {
       visible: true,
       timeout: 20000,
     });
-    await search_input.type("JP Morgan lang:en until:2019-12-31 since:2013-01-01");
+    await search_input.type("JP Morgan until:2020-01-01 since:2013-01-01");
     await search_input.press("Enter");
     // latest Tab
     const latest_xPATH =
