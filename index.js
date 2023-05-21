@@ -54,7 +54,7 @@ async function get_tweet_data(card) {
   return tweet;
 }
 
-const extractTweets = async (current_date, end_Date, search_input) => {
+const extractTweets = async (current_date, end_Date) => {
   // Start a Puppeteer session with:
   let browser;
   try {
@@ -161,10 +161,10 @@ const extractTweets = async (current_date, end_Date, search_input) => {
         "/html/body/div[1]/div/div/div[2]/main/div/div/div/div[2]/div/div[2]/div/div/div/div[1]/div/div/div/form/div[1]/div/div/div/label/div[2]/div/input";
       const search_input = await page.waitForXPath(search_xPATH, {
         visible: true,
-        timeout: 20000,
+        timeout: 200000,
       });
       await search_input.type(
-        search_input +
+        "Morgan Stanley Bank lang:en until:" +
           current_date.toISOString().slice(0, 10) +
           " since:" +
           end_Date.toISOString().slice(0, 10)
@@ -187,7 +187,7 @@ const extractTweets = async (current_date, end_Date, search_input) => {
       while (scrolling) {
         await page.waitForXPath('//article[@data-testid="tweet"]', {
           visible: true,
-          timeout: 30000,
+          timeout: 300000,
         });
 
         const cards = await page.$x('//article[@data-testid="tweet"]');
@@ -249,4 +249,4 @@ const extractTweets = async (current_date, end_Date, search_input) => {
 };
 
 // Start the scraping
-extractTweets(new Date(2014, 3, 24), new Date(2013, 0, 1), "Morgan Stanley Bank lang:en until:");
+extractTweets(new Date(2014, 3, 25), new Date(2013, 0, 0));
