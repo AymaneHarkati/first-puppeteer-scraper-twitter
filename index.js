@@ -4,19 +4,21 @@ const require = createRequire(import.meta.url);
 
 function to_csv(tweet_data) {
   const fs = require("fs");
-
+  const jsonData = JSON.stringify(tweet_data);
   // Create or overwrite the file
-  const filename = "stanley.csv";
-  fs.appendFileSync(filename, "username,handle,postDate,tweetText,likes,\n");
-
-  // Write rows to the file
-  for (const data of tweet_data) {
-    const row = data.join(",");
-    fs.appendFileSync(filename, row + "\n");
+  const filename = "JKS_tweets_final.json";
+  fs.writeFile(filename, jsonData, (err) => {
+  if (err) {
+    console.error('Error writing JSON file:', err);
+  } else {
+    console.log('JSON file saved successfully!');
   }
+});
+
 }
 
 async function get_tweet_data(card) {
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Adjust the delay as needed
   // username , getting the first span tag after the current tag
   const username = await card
     .$eval("span", (el) => el.textContent.replace(/\n/g, " ").trim())
@@ -42,7 +44,7 @@ async function get_tweet_data(card) {
       el.textContent.replace(/\n/g, " ").trim()
     )
     .catch(() => "N/A");
-
+  
   // likes
   const likes = await card
     .$eval('div[data-testid="like"]', (el) =>
@@ -50,7 +52,8 @@ async function get_tweet_data(card) {
     )
     .catch(() => "N/A");
 
-  const tweet = [username, handle, postDate, tweetText, likes];
+  const tweet = [postDate, tweetText];
+  console.log(tweet);
   return tweet;
 }
 
@@ -164,7 +167,7 @@ const extractTweets = async (current_date, end_Date) => {
         timeout: 200000,
       });
       await search_input.type(
-        "Morgan Stanley Bank lang:en until:" +
+        "$JKS lang:en until:" +
           current_date.toISOString().slice(0, 10) +
           " since:" +
           end_Date.toISOString().slice(0, 10)
@@ -232,7 +235,7 @@ const extractTweets = async (current_date, end_Date) => {
           }
         }
       }
-      current_date = tweet_data.slice(-1)[0][2];
+      current_date = tweet_data.slice(-1)[0][0];
       let timestamp = Date.parse(current_date);
       current_date = new Date(timestamp);
       to_csv(tweet_data);
@@ -249,4 +252,4 @@ const extractTweets = async (current_date, end_Date) => {
 };
 
 // Start the scraping
-extractTweets(new Date(2014, 3, 25), new Date(2013, 0, 0));
+extractTweets(new Date(2020, 0, 2), new Date(2012, 11, 31));
