@@ -188,8 +188,8 @@ const extractTweets = async (
 
 // Start the scraping
 extractTweets(
-  new Date(2020, 0, 2),
-  new Date(2012, 11, 31),
+  "Since Date ex=2020",
+  "Until Date ex=2013",
   "Account Email",
   "Account Username",
   "Account Password",
