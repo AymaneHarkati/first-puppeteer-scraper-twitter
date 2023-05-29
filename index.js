@@ -1,63 +1,16 @@
 import puppeteer from "puppeteer";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import { append_to_csv } from "./to_csv.js";
+import { get_tweet_data } from "./get_tweet_data.js";
 
-function to_csv(tweet_data) {
-  const fs = require("fs");
-  const jsonData = JSON.stringify(tweet_data);
-  // Create or overwrite the file
-  const filename = "JKS_tweets_final.json";
-  fs.writeFile(filename, jsonData, (err) => {
-  if (err) {
-    console.error('Error writing JSON file:', err);
-  } else {
-    console.log('JSON file saved successfully!');
-  }
-});
-
-}
-
-async function get_tweet_data(card) {
-  await new Promise(resolve => setTimeout(resolve, 1000)); // Adjust the delay as needed
-  // username , getting the first span tag after the current tag
-  const username = await card
-    .$eval("span", (el) => el.textContent.replace(/\n/g, " ").trim())
-    .catch(() => "N/A");
-
-  // twitter handle
-  const handle = await card.evaluate((card) => {
-    const handleElement = card.querySelector('span[aria-hidden="true"] + span');
-    if (handleElement) {
-      return handleElement.textContent.replace(/\n/g, " ").trim();
-    } else {
-      return null;
-    }
-  });
-
-  // post date
-  const postDate = await card
-    .$eval("time", (el) => el.getAttribute("datetime"))
-    .catch(() => "N/A");
-  // content of the tweet
-  const tweetText = await card
-    .$eval('div[data-testid="tweetText"]', (el) =>
-      el.textContent.replace(/\n/g, " ").trim()
-    )
-    .catch(() => "N/A");
-  
-  // likes
-  const likes = await card
-    .$eval('div[data-testid="like"]', (el) =>
-      el.textContent.replace(/\n/g, " ").trim()
-    )
-    .catch(() => "N/A");
-
-  const tweet = [postDate, tweetText];
-  console.log(tweet);
-  return tweet;
-}
-
-const extractTweets = async (current_date, end_Date) => {
+const extractTweets = async (
+  current_date,
+  end_Date,
+  email,
+  username,
+  password,
+  keyword,
+  csv_name
+) => {
   // Start a Puppeteer session with:
   let browser;
   try {
@@ -75,25 +28,6 @@ const extractTweets = async (current_date, end_Date) => {
           "--disable-accelerated-2d-canvas",
           "--disable-background-timer-throttling",
           "--disable-backgrounding-occluded-windows",
-          "--disable-breakpad",
-          "--disable-client-side-phishing-detection",
-          "--disable-default-apps",
-          "--disable-extensions",
-          "--disable-features=site-per-process",
-          "--disable-hang-monitor",
-          "--disable-ipc-flooding-protection",
-          "--disable-popup-blocking",
-          "--disable-prompt-on-repost",
-          "--disable-renderer-backgrounding",
-          "--disable-sync",
-          "--force-color-profile=srgb",
-          "--metrics-recording-only",
-          "--no-first-run",
-          "--safebrowsing-disable-auto-update",
-          "--enable-automation",
-          "--password-store=basic",
-          "--use-mock-keychain",
-          "--enable-features=NetworkService,NetworkServiceInProcess",
         ],
       });
       const page = await browser.newPage();
@@ -109,7 +43,7 @@ const extractTweets = async (current_date, end_Date) => {
         timeout: 20000,
       });
       const usernameInput = await page.$(usernameSelector);
-      await usernameInput.type("naboc11531@in2reach.com");
+      await usernameInput.type(email);
 
       // Click on login button
       const loginButtonSelector =
@@ -127,7 +61,7 @@ const extractTweets = async (current_date, end_Date) => {
         .catch(() => false);
       if (isavlb) {
         const verifyUsernameInput = await page.$(usernameSelector);
-        await verifyUsernameInput.type("FaceGhost25358");
+        await verifyUsernameInput.type(username);
       }
 
       // Click on verify login button
@@ -147,7 +81,7 @@ const extractTweets = async (current_date, end_Date) => {
         timeout: 20000,
       });
       const passwordInput = await page.$(passwordSelector);
-      await passwordInput.type("12345678Kakachi");
+      await passwordInput.type(password);
 
       // Click on login button again
       const loginButtonSecondSelector =
@@ -167,7 +101,8 @@ const extractTweets = async (current_date, end_Date) => {
         timeout: 200000,
       });
       await search_input.type(
-        "$JKS lang:en until:" +
+        keyword +
+          " lang:en until:" +
           current_date.toISOString().slice(0, 10) +
           " since:" +
           end_Date.toISOString().slice(0, 10)
@@ -198,7 +133,7 @@ const extractTweets = async (current_date, end_Date) => {
           break;
         }
         if (cards.length > 0) {
-          for (const card of cards.slice(-10)) {
+          for (const card of cards.slice(-200)) {
             const data = await get_tweet_data(card);
             if (data) {
               const tweet_id = data.join("");
@@ -238,12 +173,12 @@ const extractTweets = async (current_date, end_Date) => {
       current_date = tweet_data.slice(-1)[0][0];
       let timestamp = Date.parse(current_date);
       current_date = new Date(timestamp);
-      to_csv(tweet_data);
+      append_to_csv(tweet_data);
       await browser?.close();
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Adjust the delay as needed
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // Adjust the delay as needed
     }
   } catch (error) {
-    to_csv(tweet_data);
+    append_to_csv(tweet_data, csv_name);
     console.error(error);
   } finally {
     await browser?.close();
@@ -252,4 +187,12 @@ const extractTweets = async (current_date, end_Date) => {
 };
 
 // Start the scraping
-extractTweets(new Date(2020, 0, 2), new Date(2012, 11, 31));
+extractTweets(
+  new Date(2020, 0, 2),
+  new Date(2012, 11, 31),
+  "Account Email",
+  "Account Username",
+  "Account Password",
+  "KEYWORD ONLY",
+  "NAME OF CSV with extension"
+);
