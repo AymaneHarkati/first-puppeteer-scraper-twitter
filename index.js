@@ -173,7 +173,7 @@ const extractTweets = async (
       current_date = tweet_data.slice(-1)[0][0];
       let timestamp = Date.parse(current_date);
       current_date = new Date(timestamp);
-      append_to_csv(tweet_data);
+      append_to_csv(tweet_data, csv_name);
       await browser?.close();
       await new Promise((resolve) => setTimeout(resolve, 10000)); // Adjust the delay as needed
     }
